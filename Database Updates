@@ -1,0 +1,4 @@
+ALTER TABLE public.bills
+ADD COLUMN price_hike_reason TEXT,
+ADD COLUMN price_rate NUMERIC,
+ADD COLUMN base_amount NUMERIC;

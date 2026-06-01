@@ -1,0 +1,83 @@
+// lib/widgets/bill_details.dart
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+class BillDetailsScreen extends StatefulWidget {
+  final String monthName;
+  final double usageM3;
+  final double priceRate;
+  final String priceHikeReason;
+
+  BillDetailsScreen({
+    required this.monthName,
+    required this.usageM3,
+    required this.priceRate,
+    required this.priceHikeReason,
+  });
+
+  @override
+  _BillDetailsScreenState createState() => _BillDetailsScreenState();
+}
+
+class _BillDetailsScreenState extends State<BillDetailsScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _priceRateController = TextEditingController();
+  final _reasonController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Generate Bill')),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Text('Month: ${widget.monthName}'),
+            Text('Usage: ${widget.usageM3} m³'),
+            TextFormField(
+              controller: _priceRateController,
+              decoration: InputDecoration(labelText: 'Price Rate'),
+              validator: (value) => value!.isEmpty ? 'Price rate is required' : null,
+            ),
+            TextFormField(
+              controller: _reasonController,
+              decoration: InputDecoration(labelText: 'Price Hike Reason'),
+              validator: (value) => value!.isEmpty ? 'Reason is required' : null,
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  final priceRate = double.parse(_priceRateController.text);
+                  final reason = _reasonController.text;
+
+                  final response = await http.post(
+                    Uri.parse('https://your-edge-function-url/calculate-dynamic-bill'),
+                    headers: {'Content-Type': 'application/json'},
+                    body: jsonEncode({
+                      'user_id': '123', // Replace with actual user ID
+                      'usage_m3': widget.usageM3,
+                      'month_name': widget.monthName,
+                      'price_rate': priceRate,
+                      'price_hike_reason': reason,
+                    }),
+                  );
+
+                  if (response.statusCode == 200) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Bill generated successfully')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to generate bill')),
+                    );
+                  }
+                }
+              },
+              child: Text('Generate Bill'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

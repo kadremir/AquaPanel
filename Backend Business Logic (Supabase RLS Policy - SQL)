@@ -1,0 +1,9 @@
+-- RLS policy to restrict access to general faults
+CREATE POLICY faults_individual_access ON public.faults
+FOR SELECT
+USING (fault_type = 'individual' OR (auth.role() = 'admin'));
+
+-- RLS policy to restrict updates to individual faults
+CREATE POLICY faults_individual_update ON public.faults
+FOR UPDATE
+USING (fault_type = 'individual' OR (auth.role() = 'admin'));

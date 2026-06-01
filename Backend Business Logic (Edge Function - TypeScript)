@@ -1,0 +1,40 @@
+// src/edge-functions/calculate-dynamic-bill.ts
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient('https://your-project.supabase.co', 'your-anon-key');
+
+export async function handleRequest(event: Request): Promise<Response> {
+  const { user_id, usage_m3, month_name, price_rate, price_hike_reason } = await event.json();
+
+  // Fetch user's profile to get subscription details
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('meter_no, district')
+    .eq('user_id', user_id)
+    .single();
+
+  if (!profile) {
+    return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 });
+  }
+
+  // Calculate base amount based on usage and rate
+  const baseAmount = usage_m3 * price_rate;
+
+  // Insert new bill
+  const { error: billError } = await supabase
+    .from('bills')
+    .insert({
+      user_id,
+      title: `Bill for ${month_name}`,
+      amount: baseAmount,
+      price_rate,
+      price_hike_reason,
+      base_amount: baseAmount,
+    });
+
+  if (billError) {
+    return new Response(JSON.stringify({ error: billError.message }), { status: 500 });
+  }
+
+  return new Response(JSON.stringify({ success: true }), { status: 200 });
+}
